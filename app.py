@@ -17,14 +17,16 @@ with st.sidebar:
 col1, col2 = st.columns(2)
 
 with col1:
-    m_file = st.file_uploader("Upload Master Diagram", type=['png', 'jpg'])
-    if m_file: st.image(m_file, caption="Reference", use_container_width=True)
+    m_file = st.file_uploader("Upload Master Diagram", type=['png', 'jpg', 'jpeg'])
+    if m_file: 
+        # Using use_column_width for maximum compatibility
+        st.image(m_file, caption="Reference", use_column_width=True)
 
 with col2:
-    s_file = st.file_uploader("Upload Student Diagram", type=['png', 'jpg'])
+    s_file = st.file_uploader("Upload Student Diagram", type=['png', 'jpg', 'jpeg'])
     if s_file:
         processed, edges = process_diagram(s_file)
-        st.image(edges, caption="AI Vision Filter", use_container_width=True)
+        st.image(edges, caption="AI Vision Filter", use_column_width=True)
 
 if st.button("Analyze and Grade") and api_key:
     if m_file and s_file:
