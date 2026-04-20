@@ -4,92 +4,78 @@ from utils.image_ops import process_diagram
 from utils.llm_engine import get_vision_response
 from utils.prompts import COT_PROMPT
 
-st.set_page_config(
-    page_title="Vision Grade Pro",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Vision Grade Pro", layout="wide")
 
-# Load custom CSS
 with open("assets/style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# ---------------- SIDEBAR ---------------- #
+if "provider" not in st.session_state:
+    st.session_state.provider = "Google Gemini"
+if "api_key" not in st.session_state:
+    st.session_state.api_key = ""
+
 with st.sidebar:
-    st.markdown("## Configuration")
+    st.title("Settings")
 
-    provider = st.selectbox(
-        "Select AI Provider",
-        ["Google Gemini", "OpenAI", "Groq"]
-    )
+    with st.form("config_form"):
+        provider = st.selectbox(
+            "Choose AI Provider",
+            ["Google Gemini", "OpenAI", "Groq"],
+            index=["Google Gemini", "OpenAI", "Groq"].index(st.session_state.provider)
+        )
 
-    api_key = st.text_input("API Key", type="password")
+        api_key = st.text_input(
+            "Enter API Key",
+            type="password",
+            value=st.session_state.api_key,
+            placeholder="Paste your API key here"
+        )
 
-    st.markdown("---")
-    st.markdown("## System Info")
-    st.caption("Engine: v1.0.4")
-    st.caption("Vision Processing: OpenCV")
+        submitted = st.form_submit_button("Save Settings")
 
-    st.markdown("---")
-    st.info("Upload both diagrams and click **Evaluate** to begin.")
+        if submitted:
+            st.session_state.provider = provider
+            st.session_state.api_key = api_key
+            st.success("Settings saved")
 
-# ---------------- HEADER ---------------- #
-st.title("Diagram Evaluation Engine")
-st.caption("Upload a reference diagram and a student submission to generate automated grading and feedback.")
+st.title("Vision Grade Pro")
+st.caption("Upload diagrams and get automatic evaluation")
 
-# ---------------- UPLOAD SECTION ---------------- #
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Reference Diagram")
     master_file = st.file_uploader(
-        "Upload master diagram",
-        type=["png", "jpg", "jpeg"],
-        key="master"
+        "Upload correct diagram",
+        type=["png", "jpg", "jpeg"]
     )
-
     if master_file:
         st.image(master_file, use_column_width=True)
 
 with col2:
     st.subheader("Student Submission")
     student_file = st.file_uploader(
-        "Upload student diagram",
-        type=["png", "jpg", "jpeg"],
-        key="student"
+        "Upload student's diagram",
+        type=["png", "jpg", "jpeg"]
     )
-
     if student_file:
-        with st.spinner("Processing diagram..."):
-            _, edges = process_diagram(student_file)
-        st.image(edges, caption="Processed Output (Edge Detection)", use_column_width=True)
+        _, edges = process_diagram(student_file)
+        st.image(edges, use_column_width=True)
 
-# ---------------- ACTION BUTTON ---------------- #
-st.markdown("---")
+run = st.button("Evaluate Diagram")
 
-if st.button("Evaluate Diagram", use_container_width=True):
-    
-    if not api_key:
-        st.error("Please enter your API key in the sidebar.")
-    
-    elif not master_file or not student_file:
-        st.warning("Please upload both diagrams before evaluation.")
-    
+if run:
+    if master_file and student_file and st.session_state.api_key:
+        with st.spinner("Analyzing diagram..."):
+            result = get_vision_response(
+                st.session_state.provider,
+                st.session_state.api_key,
+                Image.open(master_file),
+                Image.open(student_file),
+                COT_PROMPT
+            )
+
+        st.subheader("Evaluation Result")
+        st.write(result)
     else:
-        with st.spinner("Analyzing diagrams and generating feedback..."):
-            try:
-                result = get_vision_response(
-                    provider,
-                    api_key,
-                    Image.open(master_file),
-                    Image.open(student_file),
-                    COT_PROMPT
-                )
-
-                st.success("Evaluation Complete")
-
-                st.markdown("## Evaluation Report")
-                st.markdown(result)
-
-            except Exception as e:
-                st.error(f"Error during evaluation: {str(e)}")
+        st.error("Please upload both diagrams and enter API key")
