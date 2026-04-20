@@ -34,13 +34,17 @@ def get_vision_response(provider, api_key, master_img, student_img, prompt):
 
         elif provider == "Groq":
             client = Groq(api_key=api_key)
+            # Using the current Llama 4 Scout vision model
             response = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
-                messages=[{"role": "user", "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{s_b64}"}}
-                ]}]
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[{
+                    "role": "user", 
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{s_b64}"}}
+                    ]
+                }]
             )
             return response.choices[0].message.content
 
