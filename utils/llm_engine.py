@@ -34,8 +34,15 @@ def get_vision_response(provider, api_key, master_img, student_img, prompt):
 
         elif provider == "Groq":
             client = Groq(api_key=api_key)
+            available_models = [m.id for m in client.models.list().data]
+            vision_models = [m for m in available_models if "vision" in m.lower() or "scout" in m.lower()]
+            
+            if not vision_models:
+                return "Error: No vision-capable models are currently available on this Groq account. Use Google Gemini or OpenAI."
+            
+            selected_model = vision_models[0]
             response = client.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                model=selected_model,
                 messages=[{"role": "user", "content": [
                     {"type": "text", "text": prompt},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
