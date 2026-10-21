@@ -33,23 +33,19 @@ def get_vision_response(provider, api_key, master_img, student_img, prompt):
             return response.choices[0].message.content
 
         elif provider == "Groq":
-            client = Groq(api_key=api_key)
-            available_models = [m.id for m in client.models.list().data]
-            vision_models = [m for m in available_models if "vision" in m.lower() or "scout" in m.lower()]
-            
-            if not vision_models:
-                return "Error: No vision-capable models are currently available on this Groq account. Use Google Gemini or OpenAI."
-            
-            selected_model = vision_models[0]
-            response = client.chat.completions.create(
-                model=selected_model,
-                messages=[{"role": "user", "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{s_b64}"}}
-                ]}]
-            )
-            return response.choices[0].message.content
+        client = Groq(api_key=api_key)
+        # Updated to the current active Groq vision model
+        selected_model = "qwen/qwen3.8-27b" 
+        
+        response = client.chat.completions.create(
+            model=selected_model,
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{s_b64}"}}
+            ]}]
+        )
+        return response.choices[0].message.content
 
     except Exception as e:
         return f"Error: {str(e)}"
