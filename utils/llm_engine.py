@@ -28,7 +28,8 @@ def get_vision_response(provider, api_key, master_img, student_img, prompt):
                     {"type": "text", "text": prompt},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{m_b64}"}},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{s_b64}"}}
-                ]}]
+                ]}],
+                max_tokens=800  # Crucial: Keeps the request under Groq's 1000 token limit
             )
             return response.choices[0].message.content
 
